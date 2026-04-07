@@ -49,7 +49,7 @@ export const Register = () => {
 
   return (
     <div className="auth-shell relative flex min-h-screen items-center justify-center p-4 sm:p-8">
-      <div className="relative z-10 grid w-full max-w-5xl overflow-hidden rounded-3xl border border-slate-200/70 bg-white/85 shadow-2xl backdrop-blur md:grid-cols-2">
+      <div className="relative z-10 grid w-full max-w-6xl overflow-visible rounded-3xl border border-slate-200/70 bg-white/85 shadow-2xl backdrop-blur md:min-h-[620px] md:grid-cols-2">
         <section className="hidden bg-gradient-to-br from-cyan-700 via-sky-700 to-blue-600 p-10 text-white md:block">
           <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-100">LeaveFlow</p>
           <h1 className="mt-4 text-4xl font-bold leading-tight">Create Your Role-Based Workspace</h1>
@@ -62,7 +62,7 @@ export const Register = () => {
           </div>
         </section>
 
-        <section className="p-6 sm:p-10">
+        <section className="relative p-6 sm:p-10">
           <h2 className="text-3xl font-bold text-slate-800">Create Account</h2>
           <p className="mt-2 text-sm text-slate-500">Get started in less than a minute.</p>
 

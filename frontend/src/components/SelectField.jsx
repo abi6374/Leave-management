@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 
 export const SelectField = ({ label, value, options, onChange, helperText }) => {
   const [open, setOpen] = useState(false);
+  const [openUpward, setOpenUpward] = useState(false);
   const rootRef = useRef(null);
 
   useEffect(() => {
@@ -14,6 +15,17 @@ export const SelectField = ({ label, value, options, onChange, helperText }) => 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (!open || !rootRef.current) return;
+
+    const rect = rootRef.current.getBoundingClientRect();
+    const estimatedMenuHeight = Math.min(options.length * 44 + 12, 240);
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+
+    setOpenUpward(spaceBelow < estimatedMenuHeight && spaceAbove > spaceBelow);
+  }, [open, options.length]);
 
   const selected = options.find((item) => item.value === value) || options[0];
 
@@ -36,7 +48,9 @@ export const SelectField = ({ label, value, options, onChange, helperText }) => 
       {open && (
         <div
           role="listbox"
-          className="absolute z-50 mt-2 max-h-60 w-full overflow-auto rounded-xl border border-slate-200 bg-white p-1 shadow-lg"
+          className={`absolute left-0 z-50 max-h-60 w-full overflow-auto rounded-xl border border-slate-200 bg-white p-1 shadow-lg ${
+            openUpward ? 'bottom-full mb-2' : 'top-full mt-2'
+          }`}
         >
           {options.map((option) => {
             const isActive = option.value === value;
