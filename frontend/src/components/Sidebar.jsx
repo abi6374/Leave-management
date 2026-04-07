@@ -117,7 +117,7 @@ export const Sidebar = ({ children }) => {
           />
         )}
 
-        <main className="min-h-[calc(100vh-64px)] flex-1 rounded-2xl border border-slate-200/70 bg-white/55 p-4 shadow-sm backdrop-blur md:p-7">
+        <main className="min-h-[calc(100vh-64px)] flex-1 rounded-2xl border border-slate-200/70 bg-white/80 p-4 shadow-sm backdrop-blur md:p-7">
           {children}
         </main>
       </div>

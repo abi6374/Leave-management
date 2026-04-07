@@ -66,11 +66,11 @@ export const Dashboard = () => {
 
   return (
     <div className="space-y-6">
-      <section className="card overflow-hidden border-0 bg-gradient-to-r from-slate-900 via-sky-900 to-cyan-900 text-white shadow-xl">
+      <section className="page-hero">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-100">Dashboard</p>
-            <h1 className="mt-2 text-3xl font-bold">Welcome back, {user?.name}</h1>
+            <h1 className="mt-2 text-3xl font-bold text-white">Welcome back, {user?.name}</h1>
             <p className="mt-2 text-sm text-cyan-100">
               You are signed in as <span className="font-bold">{greetingRole}</span>.
             </p>
@@ -80,7 +80,7 @@ export const Dashboard = () => {
               logout();
               navigate('/login');
             }}
-            className="rounded-xl border border-white/40 px-4 py-2 text-sm font-semibold transition hover:bg-white/10"
+            className="rounded-xl border border-white/40 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
           >
             Log Out
           </button>
@@ -119,7 +119,7 @@ export const Dashboard = () => {
             <button
               key={item.route}
               onClick={() => navigate(item.route)}
-              className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-left transition hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50"
+              className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-left transition duration-200 hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50"
             >
               <span className="grid h-8 w-8 place-items-center rounded-lg bg-slate-200 text-sm font-bold text-slate-700">
                 {item.icon}
