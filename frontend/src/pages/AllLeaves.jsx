@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { leaveAPI } from '../services/api';
 import { toast } from 'react-toastify';
+import { SelectField } from '../components/SelectField';
 
 const getStatusBadge = (status) => {
   const badges = {
@@ -34,6 +35,15 @@ export const AllLeaves = () => {
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState(null);
   const [filterStatus, setFilterStatus] = useState('all');
+
+  const filterOptions = [
+    { value: 'all', label: 'All Statuses' },
+    { value: 'pending_staff', label: 'Pending Staff Approval' },
+    { value: 'pending_hod', label: 'Pending HOD Approval' },
+    { value: 'pending_principal', label: 'Pending Principal Approval' },
+    { value: 'approved', label: 'Approved' },
+    { value: 'rejected', label: 'Rejected' },
+  ];
 
   useEffect(() => {
     if (user?.role !== 'principal') {
@@ -93,19 +103,14 @@ export const AllLeaves = () => {
       </section>
 
       <div className="card">
-        <label className="mb-2 block text-sm font-semibold text-slate-700">Filter by Status</label>
-        <select
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-          className="input-field max-w-sm"
-        >
-          <option value="all">All Statuses</option>
-          <option value="pending_staff">Pending Staff Approval</option>
-          <option value="pending_hod">Pending HOD Approval</option>
-          <option value="pending_principal">Pending Principal Approval</option>
-          <option value="approved">Approved</option>
-          <option value="rejected">Rejected</option>
-        </select>
+        <div className="max-w-sm">
+          <SelectField
+            label="Filter by Status"
+            value={filterStatus}
+            options={filterOptions}
+            onChange={setFilterStatus}
+          />
+        </div>
       </div>
 
       {filteredLeaves.length === 0 ? (

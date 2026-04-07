@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { SelectField } from '../components/SelectField';
 
 export const Register = () => {
   const [formData, setFormData] = useState({
@@ -15,6 +16,13 @@ export const Register = () => {
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
+
+  const roleOptions = [
+    { value: 'student', label: 'Student' },
+    { value: 'staff', label: 'Staff' },
+    { value: 'hod', label: 'HOD' },
+    { value: 'principal', label: 'Principal' },
+  ];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -99,19 +107,17 @@ export const Register = () => {
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-semibold text-slate-700">Role</label>
-                <select
-                  name="role"
+                <SelectField
+                  label="Role"
                   value={formData.role}
-                  onChange={handleChange}
-                  className="input-field"
-                  required
-                >
-                  <option value="student">Student</option>
-                  <option value="staff">Staff</option>
-                  <option value="hod">HOD</option>
-                  <option value="principal">Principal</option>
-                </select>
+                  options={roleOptions}
+                  onChange={(newRole) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      role: newRole,
+                    }))
+                  }
+                />
               </div>
             </div>
 

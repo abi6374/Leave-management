@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { toast } from 'react-toastify';
 import { leaveAPI } from '../services/api';
+import { SelectField } from '../components/SelectField';
 
 export const ApplyLeave = () => {
   const { user } = useAuth();
@@ -14,6 +15,14 @@ export const ApplyLeave = () => {
     fromDate: '',
     toDate: '',
   });
+
+  const leaveTypeOptions = [
+    { value: 'Casual', label: 'Casual' },
+    { value: 'Sick', label: 'Sick' },
+    { value: 'Earned', label: 'Earned' },
+    { value: 'Medical', label: 'Medical' },
+    { value: 'Special', label: 'Special' },
+  ];
 
   useEffect(() => {
     if (user && (user.role === 'principal' || user.role === 'hod')) {
@@ -60,20 +69,17 @@ export const ApplyLeave = () => {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
-                <label className="mb-1.5 block text-sm font-semibold text-slate-700">Leave Type</label>
-                <select
-                  name="leaveType"
+                <SelectField
+                  label="Leave Type"
                   value={formData.leaveType}
-                  onChange={handleChange}
-                  className="input-field"
-                  required
-                >
-                  <option value="Casual">Casual</option>
-                  <option value="Sick">Sick</option>
-                  <option value="Earned">Earned</option>
-                  <option value="Medical">Medical</option>
-                  <option value="Special">Special</option>
-                </select>
+                  options={leaveTypeOptions}
+                  onChange={(leaveType) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      leaveType,
+                    }))
+                  }
+                />
               </div>
 
               <div>
