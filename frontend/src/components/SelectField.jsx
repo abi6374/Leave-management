@@ -30,7 +30,7 @@ export const SelectField = ({ label, value, options, onChange, helperText }) => 
   const selected = options.find((item) => item.value === value) || options[0];
 
   return (
-    <div ref={rootRef} className="relative">
+    <div ref={rootRef} className="relative z-50">
       {label && <label className="mb-1.5 block text-sm font-semibold text-slate-700">{label}</label>}
       <button
         type="button"
@@ -48,7 +48,7 @@ export const SelectField = ({ label, value, options, onChange, helperText }) => 
       {open && (
         <div
           role="listbox"
-          className={`absolute left-0 z-50 max-h-60 w-full overflow-auto rounded-xl border border-slate-200 bg-white p-1 shadow-lg ${
+          className={`absolute left-0 z-[9999] max-h-60 w-full overflow-auto rounded-xl border border-slate-200 bg-white p-1 shadow-2xl ${
             openUpward ? 'bottom-full mb-2' : 'top-full mt-2'
           }`}
         >

@@ -6,10 +6,10 @@ export const Header = ({ darkMode, onToggleDarkMode }) => {
   const { user } = useAuth();
 
   return (
-    <header className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/70 bg-white/70 p-4 backdrop-blur">
+    <header className={`mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-4 backdrop-blur ${darkMode ? 'border-slate-700 bg-slate-950/70' : 'border-slate-200/70 bg-white/70'}`}>
       <div>
-        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">LeaveFlow</p>
-        <h1 className="text-2xl font-bold text-slate-900">Hello, {user?.name}</h1>
+        <p className={`text-xs font-semibold uppercase tracking-wider ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>LeaveFlow</p>
+        <h1 className={`text-2xl font-bold ${darkMode ? 'text-slate-50' : 'text-slate-900'}`}>Hello, {user?.name}</h1>
       </div>
       <div className="flex items-center gap-3">
         <button onClick={onToggleDarkMode} className="btn-secondary">
