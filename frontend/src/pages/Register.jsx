@@ -1,0 +1,148 @@
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+
+export const Register = () => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: 'student',
+    department: '',
+  });
+  const [loading, setLoading] = useState(false);
+  const { register } = useAuth();
+  const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      await register(formData.name, formData.email, formData.password, formData.role, formData.department);
+      toast.success('Registration successful!');
+      navigate('/dashboard');
+    } catch (error) {
+      toast.error(error.message || 'Registration failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="auth-shell relative flex min-h-screen items-center justify-center p-4 sm:p-8">
+      <div className="relative z-10 grid w-full max-w-5xl overflow-hidden rounded-3xl border border-slate-200/70 bg-white/85 shadow-2xl backdrop-blur md:grid-cols-2">
+        <section className="hidden bg-gradient-to-br from-cyan-700 via-sky-700 to-blue-600 p-10 text-white md:block">
+          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-100">LeaveFlow</p>
+          <h1 className="mt-4 text-4xl font-bold leading-tight">Create Your Role-Based Workspace</h1>
+          <p className="mt-4 max-w-sm text-sm text-cyan-100">
+            Register once and get immediate access to your leave operations and approval pipeline.
+          </p>
+          <div className="mt-8 rounded-2xl bg-white/10 p-4 text-sm">
+            <p>Choose role carefully:</p>
+            <p className="mt-2">Student, Staff, HOD, Principal</p>
+          </div>
+        </section>
+
+        <section className="p-6 sm:p-10">
+          <h2 className="text-3xl font-bold text-slate-800">Create Account</h2>
+          <p className="mt-2 text-sm text-slate-500">Get started in less than a minute.</p>
+
+          <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+            <div>
+              <label className="mb-1.5 block text-sm font-semibold text-slate-700">Full Name</label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                className="input-field"
+                placeholder="John Doe"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-sm font-semibold text-slate-700">Email</label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                className="input-field"
+                placeholder="you@campus.edu"
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-slate-700">Password</label>
+                <input
+                  type="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="input-field"
+                  placeholder="Minimum 6 characters"
+                  required
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-slate-700">Role</label>
+                <select
+                  name="role"
+                  value={formData.role}
+                  onChange={handleChange}
+                  className="input-field"
+                  required
+                >
+                  <option value="student">Student</option>
+                  <option value="staff">Staff</option>
+                  <option value="hod">HOD</option>
+                  <option value="principal">Principal</option>
+                </select>
+              </div>
+            </div>
+
+            {(formData.role === 'hod' || formData.role === 'principal') && (
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-slate-700">Department</label>
+                <input
+                  type="text"
+                  name="department"
+                  value={formData.department}
+                  onChange={handleChange}
+                  className="input-field"
+                  placeholder="Computer Science"
+                  required
+                />
+              </div>
+            )}
+
+            <button type="submit" disabled={loading} className="btn-primary w-full">
+              {loading ? 'Creating account...' : 'Create Account'}
+            </button>
+          </form>
+
+          <p className="mt-6 text-center text-sm text-slate-600">
+            Already registered?{' '}
+            <Link to="/login" className="font-bold text-sky-700 hover:text-sky-800">
+              Sign in
+            </Link>
+          </p>
+        </section>
+      </div>
+    </div>
+  );
+};
