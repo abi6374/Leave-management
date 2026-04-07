@@ -9,6 +9,7 @@ export const NotificationBell = () => {
   const [menuStyle, setMenuStyle] = useState(null);
   const { notifications, unreadCount, markRead } = useNotificationContext();
   const buttonRef = useRef(null);
+  const isDark = typeof document !== 'undefined' && document.documentElement.dataset.theme === 'dark';
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -58,11 +59,11 @@ export const NotificationBell = () => {
         ? createPortal(
             <div
               data-notification-menu="true"
-              className="rounded-2xl border border-slate-200 bg-white p-3 shadow-2xl"
+              className={`rounded-2xl border p-3 shadow-2xl ${isDark ? 'border-slate-700 bg-slate-950 text-slate-100' : 'border-slate-200 bg-white text-slate-900'}`}
               style={menuStyle || { position: 'fixed', zIndex: 10000, top: '72px', right: '16px', width: '384px' }}
             >
               <div className="mb-3 flex items-center justify-between">
-                <h4 className="text-sm font-bold text-slate-800">Recent Notifications</h4>
+                <h4 className={`text-sm font-bold ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>Recent Notifications</h4>
                 <Link to="/notifications" onClick={() => setOpen(false)} className="text-xs font-semibold text-blue-700">View all</Link>
               </div>
               <div className="space-y-2">

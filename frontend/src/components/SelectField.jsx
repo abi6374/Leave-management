@@ -58,6 +58,7 @@ export const SelectField = ({ label, value, options, onChange, helperText }) => 
   }, [open]);
 
   const selected = options.find((item) => item.value === value) || options[0];
+  const isDark = typeof document !== 'undefined' && document.documentElement.dataset.theme === 'dark';
 
   return (
     <div ref={rootRef} className="relative">
@@ -79,7 +80,7 @@ export const SelectField = ({ label, value, options, onChange, helperText }) => 
         ? createPortal(
             <div
               role="listbox"
-              className="max-h-60 overflow-auto rounded-xl border border-slate-200 bg-white p-1 shadow-2xl"
+              className={`max-h-60 overflow-auto rounded-xl border p-1 shadow-2xl ${isDark ? 'border-slate-700 bg-slate-950 text-slate-100' : 'border-slate-200 bg-white text-slate-900'}`}
               style={{
                 ...(menuStyle || {}),
                 top: openUpward && rootRef.current ? `${rootRef.current.getBoundingClientRect().top - Math.min(options.length * 44 + 12, 240) - 8}px` : `${rootRef.current.getBoundingClientRect().bottom + 8}px`,
@@ -98,7 +99,9 @@ export const SelectField = ({ label, value, options, onChange, helperText }) => 
                     className={`w-full rounded-lg px-3 py-2.5 text-left text-sm font-semibold transition ${
                       isActive
                         ? 'bg-sky-600 text-white'
-                        : 'text-slate-700 hover:bg-slate-100'
+                        : isDark
+                          ? 'text-slate-200 hover:bg-slate-800'
+                          : 'text-slate-700 hover:bg-slate-100'
                     }`}
                   >
                     {option.label}
