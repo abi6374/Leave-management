@@ -1,154 +1,179 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
 import { toast } from 'react-toastify';
 import { leaveAPI } from '../services/api';
 import { SelectField } from '../components/SelectField';
+import { countWorkingDays } from '../utils/dateUtils';
+import { useBalance } from '../hooks/useBalance';
+
+const leaveTypeOptions = [
+  { value: 'Sick', label: 'Sick' },
+  { value: 'Casual', label: 'Casual' },
+  { value: 'Earned', label: 'Earned' },
+  { value: 'Duty', label: 'Duty' },
+  { value: 'Emergency', label: 'Emergency' },
+  { value: 'Other', label: 'Other' },
+];
+
+const balanceKeyMap = {
+  Sick: 'sick',
+  Casual: 'casual',
+  Earned: 'earned',
+  Duty: 'duty',
+};
 
 export const ApplyLeave = () => {
-  const { user } = useAuth();
   const navigate = useNavigate();
+  const { balance } = useBalance(new Date().getFullYear());
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     leaveType: 'Casual',
-    reason: '',
     fromDate: '',
     toDate: '',
+    reason: '',
+    isUrgent: false,
+    attachmentUrl: '',
   });
 
-  const leaveTypeOptions = [
-    { value: 'Casual', label: 'Casual' },
-    { value: 'Sick', label: 'Sick' },
-    { value: 'Earned', label: 'Earned' },
-    { value: 'Medical', label: 'Medical' },
-    { value: 'Special', label: 'Special' },
-  ];
+  const totalDays = useMemo(
+    () => countWorkingDays(formData.fromDate, formData.toDate),
+    [formData.fromDate, formData.toDate]
+  );
 
-  useEffect(() => {
-    if (user && (user.role === 'principal' || user.role === 'hod')) {
-      toast.error('You cannot apply for leave');
-      navigate('/dashboard');
-    }
-  }, [user, navigate]);
+  const selectedBalance = useMemo(() => {
+    const key = balanceKeyMap[formData.leaveType];
+    return key ? balance?.[key] : null;
+  }, [balance, formData.leaveType]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+  const insufficient = selectedBalance && totalDays > selectedBalance.remaining;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
 
+    if (insufficient) {
+      toast.error('Insufficient balance for selected leave type');
+      return;
+    }
+
+    if (!totalDays) {
+      toast.error('Select a valid working-day date range');
+      return;
+    }
+
+    setLoading(true);
     try {
-      await leaveAPI.applyLeave(formData);
-      toast.success('Leave application submitted!');
+      await leaveAPI.applyLeave({ ...formData, totalDays });
+      toast.success('Leave application submitted');
       navigate('/my-leaves');
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to apply for leave');
+      toast.error(error.response?.data?.message || 'Failed to submit leave request');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="mx-auto max-w-4xl">
-      <section className="page-hero">
-        <p className="page-kicker">Leave Console</p>
-        <h1 className="page-title">Apply for Leave</h1>
-        <p className="page-subtitle">
-          Submit your request with exact dates and a clear reason so approvals can move faster.
-        </p>
-      </section>
+    <div className="space-y-4">
+      <div className="page-hero">
+        <p className="page-kicker">Apply</p>
+        <h2 className="page-title">Apply Leave</h2>
+        <p className="page-subtitle">Smart validation, working-day calculation, and balance checks.</p>
+      </div>
 
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.3fr_0.7fr]">
-        <div className="card">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <SelectField
-                  label="Leave Type"
-                  value={formData.leaveType}
-                  options={leaveTypeOptions}
-                  onChange={(leaveType) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      leaveType,
-                    }))
-                  }
-                />
-              </div>
+      <form className="card space-y-4" onSubmit={handleSubmit}>
+        <div className="grid gap-4 md:grid-cols-2">
+          <SelectField
+            label="Leave Type"
+            value={formData.leaveType}
+            options={leaveTypeOptions}
+            onChange={(leaveType) => setFormData((prev) => ({ ...prev, leaveType }))}
+          />
 
-              <div>
-                <label className="mb-1.5 block text-sm font-semibold text-slate-700">From Date</label>
-                <input
-                  type="date"
-                  name="fromDate"
-                  value={formData.fromDate}
-                  onChange={handleChange}
-                  className="input-field"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-sm font-semibold text-slate-700">To Date</label>
-              <input
-                type="date"
-                name="toDate"
-                value={formData.toDate}
-                onChange={handleChange}
-                className="input-field"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-sm font-semibold text-slate-700">Reason for Leave</label>
-              <textarea
-                name="reason"
-                value={formData.reason}
-                onChange={handleChange}
-                className="input-field resize-none"
-                rows="6"
-                placeholder="Briefly mention why you need leave"
-                required
-              ></textarea>
-            </div>
-
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <button type="submit" disabled={loading} className="btn-primary flex-1">
-                {loading ? 'Submitting...' : 'Submit Application'}
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate('/dashboard')}
-                className="btn-secondary flex-1"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
+          <div className="rounded-xl border border-slate-200 p-3">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Working Days</p>
+            <p className="mt-1 text-2xl font-bold text-slate-900">{totalDays}</p>
+            <p className="text-xs text-slate-500">Weekends are excluded automatically.</p>
+          </div>
         </div>
 
-        <aside className="card">
-          <p className="label-subtle">Submission Tips</p>
-          <ul className="mt-3 space-y-3 text-sm text-slate-600">
-            <li>Use exact dates for faster approval decisions.</li>
-            <li>Keep your reason short but specific.</li>
-            <li>Medical leaves should mention if documents are available.</li>
-          </ul>
-          <div className="panel-soft mt-5">
-            <p className="label-subtle">Workflow</p>
-            <p className="mt-2 text-sm text-slate-700">Student: Staff to HOD to Principal</p>
-            <p className="mt-1 text-sm text-slate-700">Staff: Principal</p>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div>
+            <label className="mb-1.5 block text-sm font-semibold text-slate-700">From Date</label>
+            <input
+              type="date"
+              className="input-field"
+              value={formData.fromDate}
+              onChange={(e) => setFormData((prev) => ({ ...prev, fromDate: e.target.value }))}
+              required
+            />
           </div>
-        </aside>
-      </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-semibold text-slate-700">To Date</label>
+            <input
+              type="date"
+              className="input-field"
+              value={formData.toDate}
+              onChange={(e) => setFormData((prev) => ({ ...prev, toDate: e.target.value }))}
+              required
+            />
+          </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div>
+            <label className="mb-1.5 block text-sm font-semibold text-slate-700">Attachment URL</label>
+            <input
+              type="url"
+              className="input-field"
+              placeholder="https://example.com/document.pdf"
+              value={formData.attachmentUrl}
+              onChange={(e) => setFormData((prev) => ({ ...prev, attachmentUrl: e.target.value }))}
+            />
+          </div>
+
+          <div className="flex items-end">
+            <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5">
+              <input
+                type="checkbox"
+                checked={formData.isUrgent}
+                onChange={(e) => setFormData((prev) => ({ ...prev, isUrgent: e.target.checked }))}
+              />
+              <span className="text-sm font-semibold text-slate-700">Is urgent?</span>
+            </label>
+          </div>
+        </div>
+
+        {selectedBalance ? (
+          <div className={`rounded-xl border p-3 ${insufficient ? 'border-rose-300 bg-rose-50' : 'border-emerald-300 bg-emerald-50'}`}>
+            <p className="text-sm font-semibold text-slate-700">
+              Remaining balance: {selectedBalance.remaining} day(s)
+            </p>
+            {insufficient ? <p className="mt-1 text-sm text-rose-700">Insufficient balance for selected range.</p> : null}
+          </div>
+        ) : null}
+
+        <div>
+          <label className="mb-1.5 block text-sm font-semibold text-slate-700">Reason</label>
+          <textarea
+            rows="5"
+            maxLength={500}
+            className="input-field resize-none"
+            value={formData.reason}
+            onChange={(e) => setFormData((prev) => ({ ...prev, reason: e.target.value }))}
+            required
+          />
+          <p className="mt-1 text-right text-xs text-slate-500">{formData.reason.length}/500</p>
+        </div>
+
+        <div className="flex gap-3">
+          <button type="submit" className="btn-primary" disabled={loading || insufficient}>
+            {loading ? 'Submitting...' : 'Submit Leave Request'}
+          </button>
+          <button type="button" className="btn-secondary" onClick={() => navigate('/dashboard')}>
+            Cancel
+          </button>
+        </div>
+      </form>
     </div>
   );
 };

@@ -14,13 +14,18 @@ const leaveSchema = new mongoose.Schema(
     },
     leaveType: {
       type: String,
-      enum: ['Sick', 'Casual', 'Earned', 'Medical', 'Special'],
+      enum: ['Sick', 'Casual', 'Earned', 'Duty', 'Emergency', 'Other'],
       required: true,
     },
     reason: {
       type: String,
       required: [true, 'Please provide a reason'],
       maxlength: 500,
+    },
+    totalDays: {
+      type: Number,
+      required: true,
+      min: 1,
     },
     fromDate: {
       type: Date,
@@ -38,8 +43,41 @@ const leaveSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['pending_staff', 'pending_hod', 'pending_principal', 'approved', 'rejected'],
+      enum: ['pending_staff', 'pending_hod', 'pending_principal', 'approved', 'rejected', 'cancelled'],
       default: 'pending_staff',
+    },
+    attachmentUrl: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+    comments: [
+      {
+        role: {
+          type: String,
+          enum: ['principal', 'hod', 'staff', 'student'],
+          required: true,
+        },
+        message: {
+          type: String,
+          required: true,
+          trim: true,
+          maxlength: 300,
+        },
+        timestamp: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+    isUrgent: {
+      type: Boolean,
+      default: false,
+    },
+    cancelledBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
     },
     approvals: {
       staffApproval: {

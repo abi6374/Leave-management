@@ -7,6 +7,8 @@ import { toast } from 'react-toastify';
 export const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [selectedRole, setSelectedRole] = useState('student');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -47,6 +49,23 @@ export const Login = () => {
           <h2 className="text-3xl font-bold text-slate-800">Welcome Back</h2>
           <p className="mt-2 text-sm text-slate-500">Sign in to continue to your dashboard.</p>
 
+          <div className="mt-5 flex flex-wrap gap-2">
+            {['student', 'staff', 'hod', 'principal'].map((role) => (
+              <button
+                key={role}
+                type="button"
+                onClick={() => setSelectedRole(role)}
+                className={`rounded-full px-3 py-1.5 text-xs font-bold uppercase tracking-wide transition ${
+                  selectedRole === role
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {role}
+              </button>
+            ))}
+          </div>
+
           <form onSubmit={handleSubmit} className="mt-8 space-y-4">
             <div>
               <label className="mb-1.5 block text-sm font-semibold text-slate-700">Email</label>
@@ -62,14 +81,28 @@ export const Login = () => {
 
             <div>
               <label className="mb-1.5 block text-sm font-semibold text-slate-700">Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="input-field"
-                placeholder="Enter password"
-                required
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="input-field pr-16"
+                  placeholder="Enter password"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute inset-y-0 right-3 text-sm font-semibold text-sky-700 hover:text-sky-800"
+                >
+                  {showPassword ? 'Hide' : 'Show'}
+                </button>
+              </div>
+              <div className="mt-1 text-right">
+                <button type="button" className="text-xs font-semibold text-sky-700 hover:text-sky-800">
+                  Forgot password?
+                </button>
+              </div>
             </div>
 
             <button type="submit" disabled={loading} className="btn-primary w-full">

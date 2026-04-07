@@ -1,222 +1,87 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../hooks/useAuth';
-import { leaveAPI } from '../services/api';
+import React, { useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
+import { useLeaves } from '../hooks/useLeaves';
+import { leaveAPI } from '../services/api';
 import { SelectField } from '../components/SelectField';
+import { LeaveStatusBadge } from '../components/leaves/LeaveStatusBadge';
+import { formatDate } from '../utils/dateUtils';
+import { downloadBlob } from '../utils/exportUtils';
 
-const getStatusBadge = (status) => {
-  const badges = {
-    pending_staff: 'badge-pending',
-    pending_hod: 'badge-pending',
-    pending_principal: 'badge-pending',
-    approved: 'badge-approved',
-    rejected: 'badge-rejected',
-  };
-  return badges[status] || 'badge-pending';
-};
-
-const formatDate = (date) => {
-  return new Date(date).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
-};
-
-const statusClass = (status) => {
-  if (status === 'approved') return 'status-approved';
-  if (status === 'rejected') return 'status-rejected';
-  return 'status-pending';
-};
+const statusOptions = [
+  { value: 'all', label: 'All Statuses' },
+  { value: 'pending_staff', label: 'Pending Staff' },
+  { value: 'pending_hod', label: 'Pending HOD' },
+  { value: 'pending_principal', label: 'Pending Principal' },
+  { value: 'approved', label: 'Approved' },
+  { value: 'rejected', label: 'Rejected' },
+  { value: 'cancelled', label: 'Cancelled' },
+];
 
 export const AllLeaves = () => {
-  const { user } = useAuth();
-  const [leaves, setLeaves] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [expandedId, setExpandedId] = useState(null);
-  const [filterStatus, setFilterStatus] = useState('all');
+  const { leaves, loading } = useLeaves('all');
+  const [status, setStatus] = useState('all');
 
-  const filterOptions = [
-    { value: 'all', label: 'All Statuses' },
-    { value: 'pending_staff', label: 'Pending Staff Approval' },
-    { value: 'pending_hod', label: 'Pending HOD Approval' },
-    { value: 'pending_principal', label: 'Pending Principal Approval' },
-    { value: 'approved', label: 'Approved' },
-    { value: 'rejected', label: 'Rejected' },
-  ];
+  const filtered = useMemo(() => {
+    if (status === 'all') return leaves;
+    return leaves.filter((leave) => leave.status === status);
+  }, [leaves, status]);
 
-  useEffect(() => {
-    if (user?.role !== 'principal') {
-      return;
-    }
-    fetchAllLeaves();
-  }, [user]);
-
-  const fetchAllLeaves = async () => {
+  const exportCsv = async () => {
     try {
-      const response = await leaveAPI.getAllLeaves();
-      setLeaves(response.data.leaves);
+      const response = await leaveAPI.exportCsv({ status: status === 'all' ? undefined : status });
+      downloadBlob(response.data, `leave-report-${Date.now()}.csv`);
+      toast.success('CSV export downloaded');
     } catch (error) {
-      toast.error('Failed to load leaves');
-    } finally {
-      setLoading(false);
+      toast.error(error.response?.data?.message || 'Failed to export CSV');
     }
   };
 
-  const filteredLeaves = filterStatus === 'all'
-    ? leaves
-    : leaves.filter((leave) => leave.status === filterStatus);
-
-  const approvedCount = leaves.filter((item) => item.status === 'approved').length;
-  const rejectedCount = leaves.filter((item) => item.status === 'rejected').length;
-  const pendingCount = leaves.filter((item) => item.status.startsWith('pending')).length;
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-96">
-        <div className="text-xl text-gray-600">Loading...</div>
-      </div>
-    );
-  }
+  if (loading) return <div className="card">Loading all leave records...</div>;
 
   return (
-    <div className="space-y-5">
-      <section className="page-hero">
-        <p className="page-kicker">Principal Overview</p>
-        <h1 className="page-title">All Leave Requests</h1>
-        <p className="page-subtitle">Filter by status and inspect complete approval chains with remarks.</p>
-      </section>
-
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <article className="metric-tile">
-          <p className="label-subtle">Pending</p>
-          <p className="mt-2 text-3xl font-bold text-amber-600">{pendingCount}</p>
-        </article>
-        <article className="metric-tile">
-          <p className="label-subtle">Approved</p>
-          <p className="mt-2 text-3xl font-bold text-emerald-600">{approvedCount}</p>
-        </article>
-        <article className="metric-tile">
-          <p className="label-subtle">Rejected</p>
-          <p className="mt-2 text-3xl font-bold text-rose-600">{rejectedCount}</p>
-        </article>
-      </section>
-
-      <div className="card">
-        <div className="max-w-sm">
-          <SelectField
-            label="Filter by Status"
-            value={filterStatus}
-            options={filterOptions}
-            onChange={setFilterStatus}
-          />
-        </div>
+    <div className="space-y-4">
+      <div className="page-hero">
+        <p className="page-kicker">Admin View</p>
+        <h2 className="page-title">All Leaves</h2>
+        <p className="page-subtitle">Filter requests and export department-level leave data.</p>
       </div>
 
-      {filteredLeaves.length === 0 ? (
-        <div className="card text-center">
-          <p className="text-lg font-semibold text-slate-700">No leave requests found</p>
-          <p className="mt-1 text-sm text-slate-500">Try a different status filter.</p>
+      <div className="card flex flex-wrap items-end justify-between gap-3">
+        <div className="max-w-sm">
+          <SelectField label="Filter status" value={status} options={statusOptions} onChange={setStatus} />
         </div>
-      ) : (
-        <div className="space-y-4">
-          {filteredLeaves.map((leave) => (
-            <div key={leave._id} className="card">
-              <div
-                className="flex cursor-pointer items-start justify-between gap-4"
-                onClick={() =>
-                  setExpandedId(expandedId === leave._id ? null : leave._id)
-                }
-              >
-                <div className="flex-1">
-                  <div className="mb-2 flex flex-wrap items-center gap-3">
-                    <h3 className="text-lg font-bold text-slate-800">
-                      {leave.userId?.name}
-                    </h3>
-                    <span className={`badge ${getStatusBadge(leave.status)}`}>
-                      {leave.status.replace('_', ' ').toUpperCase()}
-                    </span>
-                  </div>
-                  <p className="text-sm text-slate-600">
-                    {leave.leaveType} Leave • {formatDate(leave.fromDate)} to{' '}
-                    {formatDate(leave.toDate)}
-                  </p>
-                  <p className="mt-1 text-sm text-slate-600">
-                    <strong>Role:</strong> {leave.userId?.role.toUpperCase()} |{' '}
-                    <strong>Department:</strong> {leave.userId?.department || 'N/A'}
-                  </p>
-                </div>
-                <div className="text-2xl text-slate-400">{expandedId === leave._id ? '-' : '+'}</div>
-              </div>
+        <button className="btn-primary" onClick={exportCsv}>Export CSV</button>
+      </div>
 
-              {expandedId === leave._id && (
-                <div className="mt-4 space-y-4 border-t border-slate-200 pt-4">
-                  <div className="panel-soft">
-                    <p className="label-subtle">Reason</p>
-                    <p className="mt-2 text-sm text-slate-700">{leave.reason}</p>
-                  </div>
-
-                  <div className="approval-grid">
-                    <div className="approval-cell">
-                      <p className="label-subtle">
-                        Staff Approval
-                      </p>
-                      <p
-                        className={`mt-1 text-sm font-bold ${statusClass(
-                          leave.approvals.staffApproval.status
-                        )}`}
-                      >
-                        {leave.approvals.staffApproval.status.toUpperCase()}
-                      </p>
-                      {leave.approvals.staffApproval.approvedBy && (
-                        <p className="mt-2 text-xs text-slate-600">
-                          By {leave.approvals.staffApproval.approvedBy.name}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="approval-cell">
-                      <p className="label-subtle">
-                        HOD Approval
-                      </p>
-                      <p
-                        className={`mt-1 text-sm font-bold ${statusClass(
-                          leave.approvals.hodApproval.status
-                        )}`}
-                      >
-                        {leave.approvals.hodApproval.status.toUpperCase()}
-                      </p>
-                      {leave.approvals.hodApproval.approvedBy && (
-                        <p className="mt-2 text-xs text-slate-600">
-                          By {leave.approvals.hodApproval.approvedBy.name}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="approval-cell">
-                      <p className="label-subtle">
-                        Principal Approval
-                      </p>
-                      <p
-                        className={`mt-1 text-sm font-bold ${statusClass(
-                          leave.approvals.principalApproval.status
-                        )}`}
-                      >
-                        {leave.approvals.principalApproval.status.toUpperCase()}
-                      </p>
-                      {leave.approvals.principalApproval.approvedBy && (
-                        <p className="mt-2 text-xs text-slate-600">
-                          By {leave.approvals.principalApproval.approvedBy.name}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
+      <div className="card overflow-x-auto">
+        <table className="w-full min-w-[920px] text-left text-sm">
+          <thead className="text-slate-500">
+            <tr>
+              <th className="pb-3">Applicant</th>
+              <th className="pb-3">Department</th>
+              <th className="pb-3">Type</th>
+              <th className="pb-3">Duration</th>
+              <th className="pb-3">Days</th>
+              <th className="pb-3">Status</th>
+              <th className="pb-3">Urgent</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((leave) => (
+              <tr key={leave._id} className="border-t border-slate-200/70">
+                <td className="py-3 font-semibold text-slate-800">{leave.userId?.name || '-'}</td>
+                <td className="py-3 text-slate-600">{leave.userId?.department || '-'}</td>
+                <td className="py-3 text-slate-600">{leave.leaveType}</td>
+                <td className="py-3 text-slate-600">{formatDate(leave.fromDate)} - {formatDate(leave.toDate)}</td>
+                <td className="py-3 text-slate-600">{leave.totalDays}</td>
+                <td className="py-3"><LeaveStatusBadge status={leave.status} /></td>
+                <td className="py-3 text-slate-600">{leave.isUrgent ? 'Yes' : 'No'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {!filtered.length ? <p className="mt-3 text-sm text-slate-500">No leaves found for current filter.</p> : null}
+      </div>
     </div>
   );
 };

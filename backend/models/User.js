@@ -26,9 +26,43 @@ const userSchema = new mongoose.Schema(
       enum: ['principal', 'hod', 'staff', 'student'],
       required: [true, 'Please provide a role'],
     },
+    employeeId: {
+      type: String,
+      trim: true,
+      unique: true,
+      sparse: true,
+    },
+    studentId: {
+      type: String,
+      trim: true,
+      unique: true,
+      sparse: true,
+    },
+    phone: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+    profilePhoto: {
+      type: String,
+      trim: true,
+      default: null,
+    },
     department: {
       type: String,
+      trim: true,
       default: null,
+      required: function requiredDepartment() {
+        return ['hod', 'staff', 'student'].includes(this.role);
+      },
+    },
+    joiningDate: {
+      type: Date,
+      default: Date.now,
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
     },
     createdAt: {
       type: Date,

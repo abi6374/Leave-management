@@ -1,179 +1,101 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../hooks/useAuth';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { leaveAPI } from '../services/api';
 import { toast } from 'react-toastify';
+import { useLeaves } from '../hooks/useLeaves';
+import { LeaveStatusBadge } from '../components/leaves/LeaveStatusBadge';
+import { ApprovalTimeline } from '../components/leaves/ApprovalTimeline';
+import { formatDate } from '../utils/dateUtils';
+import { leaveAPI } from '../services/api';
+import { SelectField } from '../components/SelectField';
 
-const getStatusBadge = (status) => {
-  const badges = {
-    pending_staff: 'badge-pending',
-    pending_hod: 'badge-pending',
-    pending_principal: 'badge-pending',
-    approved: 'badge-approved',
-    rejected: 'badge-rejected',
-  };
-  return badges[status] || 'badge-pending';
-};
+const PAGE_SIZE = 6;
 
-const formatDate = (date) => {
-  return new Date(date).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
-};
-
-const statusClass = (status) => {
-  if (status === 'approved') return 'status-approved';
-  if (status === 'rejected') return 'status-rejected';
-  return 'status-pending';
-};
+const statusOptions = [
+  { value: 'all', label: 'All Statuses' },
+  { value: 'pending_staff', label: 'Pending Staff' },
+  { value: 'pending_hod', label: 'Pending HOD' },
+  { value: 'pending_principal', label: 'Pending Principal' },
+  { value: 'approved', label: 'Approved' },
+  { value: 'rejected', label: 'Rejected' },
+  { value: 'cancelled', label: 'Cancelled' },
+];
 
 export const MyLeaves = () => {
-  const { user } = useAuth();
   const navigate = useNavigate();
-  const [leaves, setLeaves] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [expandedId, setExpandedId] = useState(null);
+  const { leaves, loading, refreshLeaves } = useLeaves('my');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [page, setPage] = useState(1);
 
-  useEffect(() => {
-    fetchMyLeaves();
-  }, []);
+  const filtered = useMemo(() => {
+    if (statusFilter === 'all') return leaves;
+    return leaves.filter((l) => l.status === statusFilter);
+  }, [leaves, statusFilter]);
 
-  const fetchMyLeaves = async () => {
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const cancelLeave = async (id) => {
     try {
-      const response = await leaveAPI.getMyLeaves();
-      setLeaves(response.data.leaves);
+      await leaveAPI.cancelLeave(id);
+      toast.success('Leave cancelled successfully');
+      refreshLeaves();
     } catch (error) {
-      toast.error('Failed to load leaves');
-    } finally {
-      setLoading(false);
+      toast.error(error.response?.data?.message || 'Failed to cancel leave');
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-96">
-        <div className="text-xl text-gray-600">Loading...</div>
-      </div>
-    );
-  }
-
-  const approvedCount = leaves.filter((leave) => leave.status === 'approved').length;
-  const rejectedCount = leaves.filter((leave) => leave.status === 'rejected').length;
-  const pendingCount = leaves.filter((leave) => leave.status.startsWith('pending')).length;
+  if (loading) return <div className="card">Loading leave history...</div>;
 
   return (
-    <div className="space-y-5">
-      <section className="page-hero">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+    <div className="space-y-4">
+      <div className="page-hero">
+        <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="page-kicker">History</p>
-            <h1 className="page-title">My Leave Applications</h1>
-            <p className="page-subtitle">Track status updates and approval remarks across each level.</p>
+            <h2 className="page-title">My Leave History</h2>
+            <p className="page-subtitle">Filter and review your application timeline.</p>
           </div>
-          {(user?.role === 'student' || user?.role === 'staff') && (
-            <button onClick={() => navigate('/apply-leave')} className="btn-primary">
-              + Apply for Leave
-            </button>
-          )}
+          <button className="btn-primary" onClick={() => navigate('/apply')}>Apply Leave</button>
         </div>
-      </section>
+      </div>
 
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <article className="metric-tile">
-          <p className="label-subtle">Pending</p>
-          <p className="mt-2 text-3xl font-bold text-amber-600">{pendingCount}</p>
-        </article>
-        <article className="metric-tile">
-          <p className="label-subtle">Approved</p>
-          <p className="mt-2 text-3xl font-bold text-emerald-600">{approvedCount}</p>
-        </article>
-        <article className="metric-tile">
-          <p className="label-subtle">Rejected</p>
-          <p className="mt-2 text-3xl font-bold text-rose-600">{rejectedCount}</p>
-        </article>
-      </section>
-
-      {leaves.length === 0 ? (
-        <div className="card text-center">
-          <p className="text-lg font-semibold text-slate-700">No leave applications yet</p>
-          <p className="mt-1 text-sm text-slate-500">Create your first request from the apply page.</p>
+      <div className="card">
+        <div className="max-w-sm">
+          <SelectField label="Filter by status" value={statusFilter} options={statusOptions} onChange={setStatusFilter} />
         </div>
-      ) : (
-        <div className="space-y-4">
-          {leaves.map((leave) => (
-            <div key={leave._id} className="card">
-              <div
-                className="flex cursor-pointer items-start justify-between gap-4"
-                onClick={() =>
-                  setExpandedId(expandedId === leave._id ? null : leave._id)
-                }
-              >
-                <div className="flex-1">
-                  <div className="mb-2 flex flex-wrap items-center gap-3">
-                    <h3 className="text-lg font-bold text-slate-800">{leave.leaveType} Leave</h3>
-                    <span className={`badge ${getStatusBadge(leave.status)}`}>
-                      {leave.status.replace('_', ' ').toUpperCase()}
-                    </span>
-                  </div>
-                  <p className="text-sm text-slate-600">
-                    {formatDate(leave.fromDate)} to {formatDate(leave.toDate)}
-                  </p>
-                </div>
-                <div className="text-2xl text-slate-400">{expandedId === leave._id ? '-' : '+'}</div>
+      </div>
+
+      <div className="space-y-3">
+        {paged.map((leave) => (
+          <div key={leave._id} className="card">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-bold text-slate-800">{leave.leaveType}</h3>
+                <p className="text-sm text-slate-500">{formatDate(leave.fromDate)} - {formatDate(leave.toDate)} | {leave.totalDays} day(s)</p>
+                <p className="mt-2 text-sm text-slate-700">{leave.reason}</p>
               </div>
-
-              {expandedId === leave._id && (
-                <div className="mt-4 space-y-4 border-t border-slate-200 pt-4">
-                  <div className="panel-soft">
-                    <p className="label-subtle">Reason</p>
-                    <p className="mt-2 text-sm text-slate-700">{leave.reason}</p>
-                  </div>
-
-                  <div className="approval-grid">
-                    <div className="approval-cell">
-                      <p className="label-subtle">Staff Approval</p>
-                      <p className={`mt-1 text-sm font-bold ${statusClass(leave.approvals.staffApproval.status)}`}>
-                        {leave.approvals.staffApproval.status.toUpperCase()}
-                      </p>
-                      {leave.approvals.staffApproval.remarks && (
-                        <p className="mt-2 text-xs text-slate-600">{leave.approvals.staffApproval.remarks}</p>
-                      )}
-                    </div>
-
-                    <div className="approval-cell">
-                      <p className="label-subtle">HOD Approval</p>
-                      <p className={`mt-1 text-sm font-bold ${statusClass(leave.approvals.hodApproval.status)}`}>
-                        {leave.approvals.hodApproval.status.toUpperCase()}
-                      </p>
-                      {leave.approvals.hodApproval.remarks && (
-                        <p className="mt-2 text-xs text-slate-600">{leave.approvals.hodApproval.remarks}</p>
-                      )}
-                    </div>
-
-                    <div className="approval-cell">
-                      <p className="label-subtle">Principal Approval</p>
-                      <p
-                        className={`mt-1 text-sm font-bold ${statusClass(
-                          leave.approvals.principalApproval.status
-                        )}`}
-                      >
-                        {leave.approvals.principalApproval.status.toUpperCase()}
-                      </p>
-                      {leave.approvals.principalApproval.remarks && (
-                        <p className="mt-2 text-xs text-slate-600">
-                          {leave.approvals.principalApproval.remarks}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
+              <div className="space-y-2">
+                <LeaveStatusBadge status={leave.status} />
+                {['approved', 'pending_staff', 'pending_hod', 'pending_principal'].includes(leave.status) ? (
+                  <button className="btn-secondary" onClick={() => cancelLeave(leave._id)}>Cancel</button>
+                ) : null}
+              </div>
             </div>
-          ))}
+            <div className="mt-4">
+              <ApprovalTimeline approvals={leave.approvals} />
+            </div>
+          </div>
+        ))}
+        {!paged.length ? <div className="card">No leaves found for selected filter.</div> : null}
+      </div>
+
+      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white/70 px-4 py-3">
+        <p className="text-sm text-slate-600">Page {page} of {totalPages}</p>
+        <div className="flex gap-2">
+          <button className="btn-secondary" disabled={page === 1} onClick={() => setPage((v) => Math.max(1, v - 1))}>Previous</button>
+          <button className="btn-secondary" disabled={page === totalPages} onClick={() => setPage((v) => Math.min(totalPages, v + 1))}>Next</button>
         </div>
-      )}
+      </div>
     </div>
   );
 };

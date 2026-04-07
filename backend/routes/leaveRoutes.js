@@ -6,6 +6,11 @@ import {
   approveLeave,
   rejectLeave,
   getAllLeaves,
+  getDashboardStats,
+  cancelLeave,
+  addComment,
+  getCalendarLeaves,
+  exportLeavesCsv,
 } from '../controllers/leaveController.js';
 import { authMiddleware, roleMiddleware } from '../middleware/authMiddleware.js';
 
@@ -50,8 +55,23 @@ router.put(
 router.get(
   '/all',
   authMiddleware,
-  roleMiddleware(['principal']),
+  roleMiddleware(['principal', 'hod']),
   getAllLeaves
 );
+
+router.get(
+  '/dashboard-stats',
+  authMiddleware,
+  roleMiddleware(['student', 'staff', 'hod', 'principal']),
+  getDashboardStats
+);
+
+router.put('/cancel/:id', authMiddleware, roleMiddleware(['student', 'staff']), cancelLeave);
+
+router.post('/comment/:id', authMiddleware, addComment);
+
+router.get('/calendar', authMiddleware, getCalendarLeaves);
+
+router.get('/export', authMiddleware, roleMiddleware(['principal', 'hod']), exportLeavesCsv);
 
 export default router;

@@ -5,8 +5,9 @@ import 'react-toastify/dist/ReactToastify.css';
 import './index.css';
 
 import { AuthProvider } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
-import { Sidebar } from './components/Sidebar';
+import { Layout } from './components/layout/Layout';
 
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
@@ -15,6 +16,19 @@ import { ApplyLeave } from './pages/ApplyLeave';
 import { MyLeaves } from './pages/MyLeaves';
 import { Approvals } from './pages/Approvals';
 import { AllLeaves } from './pages/AllLeaves';
+import { Calendar } from './pages/Calendar';
+import { Balance } from './pages/Balance';
+import { Notifications } from './pages/Notifications';
+import { Profile } from './pages/Profile';
+import { UserManagement } from './pages/admin/UserManagement';
+
+const PrivateShell = ({ children }) => (
+  <ProtectedRoute>
+    <NotificationProvider>
+      <Layout>{children}</Layout>
+    </NotificationProvider>
+  </ProtectedRoute>
+);
 
 function App() {
   return (
@@ -30,55 +44,92 @@ function App() {
           <Route
             path="/dashboard"
             element={
-              <ProtectedRoute>
-                <Sidebar>
-                  <Dashboard />
-                </Sidebar>
-              </ProtectedRoute>
+              <PrivateShell>
+                <Dashboard />
+              </PrivateShell>
             }
           />
 
           <Route
-            path="/apply-leave"
+            path="/apply"
             element={
-              <ProtectedRoute>
-                <Sidebar>
-                  <ApplyLeave />
-                </Sidebar>
-              </ProtectedRoute>
+              <PrivateShell>
+                <ApplyLeave />
+              </PrivateShell>
             }
           />
+
+          <Route path="/apply-leave" element={<Navigate to="/apply" />} />
 
           <Route
             path="/my-leaves"
             element={
-              <ProtectedRoute>
-                <Sidebar>
-                  <MyLeaves />
-                </Sidebar>
-              </ProtectedRoute>
+              <PrivateShell>
+                <MyLeaves />
+              </PrivateShell>
             }
           />
 
           <Route
             path="/approvals"
             element={
-              <ProtectedRoute>
-                <Sidebar>
-                  <Approvals />
-                </Sidebar>
-              </ProtectedRoute>
+              <PrivateShell>
+                <Approvals />
+              </PrivateShell>
             }
           />
 
           <Route
             path="/all-leaves"
             element={
-              <ProtectedRoute>
-                <Sidebar>
-                  <AllLeaves />
-                </Sidebar>
-              </ProtectedRoute>
+              <PrivateShell>
+                <AllLeaves />
+              </PrivateShell>
+            }
+          />
+
+          <Route
+            path="/calendar"
+            element={
+              <PrivateShell>
+                <Calendar />
+              </PrivateShell>
+            }
+          />
+
+          <Route
+            path="/balance"
+            element={
+              <PrivateShell>
+                <Balance />
+              </PrivateShell>
+            }
+          />
+
+          <Route
+            path="/notifications"
+            element={
+              <PrivateShell>
+                <Notifications />
+              </PrivateShell>
+            }
+          />
+
+          <Route
+            path="/profile"
+            element={
+              <PrivateShell>
+                <Profile />
+              </PrivateShell>
+            }
+          />
+
+          <Route
+            path="/admin/users"
+            element={
+              <PrivateShell>
+                <UserManagement />
+              </PrivateShell>
             }
           />
 

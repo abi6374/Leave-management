@@ -12,8 +12,11 @@ export const Register = () => {
     password: '',
     role: 'student',
     department: '',
+    employeeId: '',
+    studentId: '',
   });
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
 
@@ -37,7 +40,7 @@ export const Register = () => {
     setLoading(true);
 
     try {
-      await register(formData.name, formData.email, formData.password, formData.role, formData.department);
+      await register(formData);
       toast.success('Registration successful!');
       navigate('/dashboard');
     } catch (error) {
@@ -96,15 +99,24 @@ export const Register = () => {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label className="mb-1.5 block text-sm font-semibold text-slate-700">Password</label>
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="input-field"
-                  placeholder="Minimum 6 characters"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    className="input-field pr-16"
+                    placeholder="Minimum 6 characters"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="absolute inset-y-0 right-3 text-sm font-semibold text-sky-700 hover:text-sky-800"
+                  >
+                    {showPassword ? 'Hide' : 'Show'}
+                  </button>
+                </div>
               </div>
               <div>
                 <SelectField
@@ -121,7 +133,7 @@ export const Register = () => {
               </div>
             </div>
 
-            {(formData.role === 'hod' || formData.role === 'principal') && (
+            {(formData.role === 'student' || formData.role === 'staff' || formData.role === 'hod') && (
               <div>
                 <label className="mb-1.5 block text-sm font-semibold text-slate-700">Department</label>
                 <input
@@ -131,6 +143,34 @@ export const Register = () => {
                   onChange={handleChange}
                   className="input-field"
                   placeholder="Computer Science"
+                  required
+                />
+              </div>
+            )}
+
+            {formData.role === 'student' ? (
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-slate-700">Student ID</label>
+                <input
+                  type="text"
+                  name="studentId"
+                  value={formData.studentId}
+                  onChange={handleChange}
+                  className="input-field"
+                  placeholder="STU-001"
+                  required
+                />
+              </div>
+            ) : (
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-slate-700">Employee ID</label>
+                <input
+                  type="text"
+                  name="employeeId"
+                  value={formData.employeeId}
+                  onChange={handleChange}
+                  className="input-field"
+                  placeholder="EMP-001"
                   required
                 />
               </div>
