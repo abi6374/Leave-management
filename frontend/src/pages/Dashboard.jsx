@@ -66,10 +66,10 @@ export const Dashboard = () => {
 
   return (
     <div className="space-y-6">
-      <section className="page-hero">
+      <section className="mb-6 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 bg-gradient-to-r from-slate-900 via-sky-900 to-cyan-800 p-6 text-white shadow-xl">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-100">Dashboard</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200">Dashboard</p>
             <h1 className="mt-2 text-3xl font-bold text-white">Welcome back, {user?.name}</h1>
             <p className="mt-2 text-sm text-cyan-100">
               You are signed in as <span className="font-bold">{greetingRole}</span>.
