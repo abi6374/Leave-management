@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 export const SelectField = ({ label, value, options, onChange, helperText }) => {
   const [open, setOpen] = useState(false);
   const [openUpward, setOpenUpward] = useState(false);
+  const [menuStyle, setMenuStyle] = useState(null);
   const rootRef = useRef(null);
 
   useEffect(() => {
@@ -25,12 +27,40 @@ export const SelectField = ({ label, value, options, onChange, helperText }) => 
     const spaceAbove = rect.top;
 
     setOpenUpward(spaceBelow < estimatedMenuHeight && spaceAbove > spaceBelow);
+    setMenuStyle({
+      position: 'fixed',
+      left: `${rect.left}px`,
+      width: `${rect.width}px`,
+      zIndex: 10000,
+    });
   }, [open, options.length]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const syncPosition = () => {
+      if (!rootRef.current) return;
+      const rect = rootRef.current.getBoundingClientRect();
+      setMenuStyle({
+        position: 'fixed',
+        left: `${rect.left}px`,
+        width: `${rect.width}px`,
+        zIndex: 10000,
+      });
+    };
+
+    window.addEventListener('resize', syncPosition);
+    window.addEventListener('scroll', syncPosition, true);
+    return () => {
+      window.removeEventListener('resize', syncPosition);
+      window.removeEventListener('scroll', syncPosition, true);
+    };
+  }, [open]);
 
   const selected = options.find((item) => item.value === value) || options[0];
 
   return (
-    <div ref={rootRef} className="relative z-50">
+    <div ref={rootRef} className="relative">
       {label && <label className="mb-1.5 block text-sm font-semibold text-slate-700">{label}</label>}
       <button
         type="button"
@@ -45,35 +75,40 @@ export const SelectField = ({ label, value, options, onChange, helperText }) => 
         </span>
       </button>
 
-      {open && (
-        <div
-          role="listbox"
-          className={`absolute left-0 z-[9999] max-h-60 w-full overflow-auto rounded-xl border border-slate-200 bg-white p-1 shadow-2xl ${
-            openUpward ? 'bottom-full mb-2' : 'top-full mt-2'
-          }`}
-        >
-          {options.map((option) => {
-            const isActive = option.value === value;
-            return (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => {
-                  onChange(option.value);
-                  setOpen(false);
-                }}
-                className={`w-full rounded-lg px-3 py-2.5 text-left text-sm font-semibold transition ${
-                  isActive
-                    ? 'bg-sky-600 text-white'
-                    : 'text-slate-700 hover:bg-slate-100'
-                }`}
-              >
-                {option.label}
-              </button>
-            );
-          })}
-        </div>
-      )}
+      {open && typeof document !== 'undefined'
+        ? createPortal(
+            <div
+              role="listbox"
+              className="max-h-60 overflow-auto rounded-xl border border-slate-200 bg-white p-1 shadow-2xl"
+              style={{
+                ...(menuStyle || {}),
+                top: openUpward && rootRef.current ? `${rootRef.current.getBoundingClientRect().top - Math.min(options.length * 44 + 12, 240) - 8}px` : `${rootRef.current.getBoundingClientRect().bottom + 8}px`,
+              }}
+            >
+              {options.map((option) => {
+                const isActive = option.value === value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => {
+                      onChange(option.value);
+                      setOpen(false);
+                    }}
+                    className={`w-full rounded-lg px-3 py-2.5 text-left text-sm font-semibold transition ${
+                      isActive
+                        ? 'bg-sky-600 text-white'
+                        : 'text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>,
+            document.body
+          )
+        : null}
 
       {helperText && <p className="mt-1 text-xs text-slate-500">{helperText}</p>}
     </div>
