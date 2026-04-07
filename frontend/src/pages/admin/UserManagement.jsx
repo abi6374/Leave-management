@@ -63,9 +63,13 @@ export const UserManagement = () => {
                 <td className="py-3 text-slate-600">{user.department || '-'}</td>
                 <td className="py-3 text-slate-600">{user.isActive ? 'Active' : 'Inactive'}</td>
                 <td className="py-3">
-                  <button className="btn-secondary" onClick={() => toggleStatus(user)}>
-                    {user.isActive ? 'Deactivate' : 'Activate'}
-                  </button>
+                  {user.role === 'principal' ? (
+                    <span className="text-xs font-semibold text-slate-400">Protected</span>
+                  ) : (
+                    <button className="btn-secondary" onClick={() => toggleStatus(user)}>
+                      {user.isActive ? 'Deactivate' : 'Activate'}
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}

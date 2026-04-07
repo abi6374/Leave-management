@@ -22,19 +22,23 @@ export const toggleUserActivation = async (req, res) => {
     const { id } = req.params;
     const { isActive } = req.body;
 
-    const user = await User.findById(id);
+    const user = await User.findById(id).select('-password');
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     if (user.role === 'principal') {
       return res.status(400).json({ message: 'Principal account cannot be deactivated' });
     }
 
-    user.isActive = typeof isActive === 'boolean' ? isActive : !user.isActive;
-    await user.save();
+    const nextActiveState = typeof isActive === 'boolean' ? isActive : !user.isActive;
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      { $set: { isActive: nextActiveState } },
+      { new: true, runValidators: false }
+    ).select('-password');
 
     res.status(200).json({
-      message: `User ${user.isActive ? 'activated' : 'deactivated'} successfully`,
-      user,
+      message: `User ${updatedUser.isActive ? 'activated' : 'deactivated'} successfully`,
+      user: updatedUser,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
